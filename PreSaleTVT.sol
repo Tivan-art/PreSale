@@ -373,8 +373,9 @@ contract PreSaleTVT is Ownable {
 
     uint256 public minAmountOut = 10 * 1e18;
 
-    constructor(address _addressTVTtoken) {
-      addressTVTtoken = _addressTVTtoken;   
+    constructor(address _addressTVTtoken, bool _paused) {
+      addressTVTtoken = _addressTVTtoken;
+      Paused = _paused;
     }
 
     
