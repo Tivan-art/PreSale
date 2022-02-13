@@ -355,6 +355,13 @@ contract PreSaleTVT is Ownable {
         bool status;
         uint256  totalAmount;
     }
+
+    struct refWalletInfo{
+        bool status;
+        uint256  totalAmount;
+        uint256  needAmount;
+        uint256  needMoreAmount;
+    }
     
     address public addressTVTtoken; 
 
@@ -384,7 +391,7 @@ contract PreSaleTVT is Ownable {
     }
 
     
-    function setPaused(address _address) public onlyOwner{
+    function addReferrer(address _address) public onlyOwner{
         referWallets[_address].status=true;
     }
 
@@ -422,13 +429,17 @@ contract PreSaleTVT is Ownable {
     }
 
     
-    function Ref_change_status(bool _status) public onlyOwner{
+    function setStatusReferralProgramm(bool _status) public onlyOwner{
         ReferalStatus = _status;
     }
 
     
-    function ApprovalToken() public onlyOwner{
+    function ApprovalTVTToken() public onlyOwner{
         IERC20(addressTVTtoken).approve(address(this),100000000000 * 1e18);
+    }
+
+    function ApprovalToken(address _contract) public onlyOwner{
+        IERC20(_contract).approve(address(this),100000000000 * 1e18);
     }
 
     
@@ -457,10 +468,12 @@ contract PreSaleTVT is Ownable {
 
         
         referWallets[msg.sender].totalAmount += _amountOut;
-        if (referWallets[msg.sender].totalAmount >= minToStartRefer){
-           referWallets[msg.sender].status = true;
-        }else{
-            referWallets[msg.sender].status = false;
+        if (!referWallets[msg.sender].status){
+            if (referWallets[msg.sender].totalAmount >= minToStartRefer){
+            referWallets[msg.sender].status = true;
+            }else{
+                referWallets[msg.sender].status = false;
+            }
         }
         TotalTokensSold += _amountOut;
     }
@@ -486,16 +499,32 @@ contract PreSaleTVT is Ownable {
         IERC20(addressTVTtoken).transferFrom(address(this), _wallet, _amountOutBon);
         IERC20(addressTVTtoken).transferFrom(address(this), _referrer, rBonus);
         referWallets[msg.sender].totalAmount += _amountOut;
-        if (referWallets[msg.sender].totalAmount >= minToStartRefer){
-           referWallets[msg.sender].status = true;
-        }else{
-            referWallets[msg.sender].status = false;
+
+        if (!referWallets[msg.sender].status){
+            if (referWallets[msg.sender].totalAmount >= minToStartRefer){
+            referWallets[msg.sender].status = true;
+            }else{
+                referWallets[msg.sender].status = false;
+            }
         }
         
         TotalTokensSold += _amountOut.add(rBonus);
         emit BuyTokenRef(_wallet, _referrer, rBonus);
     }
 
+    function getRefInfo(address _address) public view returns (refWalletInfo memory _result) {
+
+        _result.status = referWallets[_address].status;
+        _result.totalAmount = referWallets[_address].totalAmount;
+        _result.needAmount = minToStartRefer;
+
+        if (referWallets[_address].totalAmount >= minToStartRefer){
+            _result.needMoreAmount = 0;
+        }else{
+            _result.needMoreAmount = minToStartRefer.sub(referWallets[_address].totalAmount);
+        }
+        return _result;
+    }
 
     function getTVTBalanceOf() public view returns (uint256) {
         return IERC20(addressTVTtoken).balanceOf(address(this));
